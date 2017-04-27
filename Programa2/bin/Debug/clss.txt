@@ -1,0 +1,304 @@
+//&p-Controlador
+//&b=70
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+
+namespace Programa7
+{
+    class Controlador
+    {
+        private Archivo archivo;
+        private double sumWi;
+        private double sumWiXi;
+        private double sumWiYi;
+        private double sumWiZi;
+        private double sumWi2;
+
+        private double sumXi;
+        private double sumXiYi;
+        private double sumXiZi;
+        private double sumXi2;
+
+        private double sumYi;
+        private double sumYiZi;
+        private double sumYi2;
+
+        private double sumZi;
+
+        //&i
+        public Controlador()
+        {
+            sumWi = 0;
+            sumWiXi = 0;
+            sumWiYi = 0;
+            sumWiZi = 0;
+            sumWi2 = 0;
+
+            sumXi = 0;
+            sumXiYi = 0;
+            sumXiZi = 0;
+            sumXi2 = 0;
+
+            sumYi = 0;
+            sumYiZi = 0;
+            sumYi2 = 0;
+
+            sumZi = 0;
+        }
+
+
+        /// <summary>
+        /// Procesa el archivo y lee línea por línea de este, calculando totales correspondientes
+        /// </summary>
+        /// <param name="nombreArchivo"></param>
+        //&i
+        public void ProcesarArchivo(string nombreArchivo)
+        {
+            archivo = new Archivo();
+            StreamReader entrada = null;
+            bool bAbierto = false;
+            try
+            {
+                entrada = File.OpenText(nombreArchivo);
+                bAbierto = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            if (bAbierto)
+            {
+                try
+                {
+                    string sLinea = entrada.ReadLine();
+                    string[] arrNums = sLinea.Split(',');
+                    archivo.Wk = double.Parse(arrNums[0]);
+                    archivo.Xk = double.Parse(arrNums[1]);  //&m
+                    archivo.Yk = double.Parse(arrNums[2]);  //&m
+                    sLinea = entrada.ReadLine();
+                    double wi = 0, xi = 0, yi = 0, zi = 0;
+                    while (sLinea != null)
+                    {
+                        string[] arrCuadruplos = sLinea.Split(','); //&m
+                        wi = double.Parse(arrCuadruplos[0]);
+                        xi = double.Parse(arrCuadruplos[1]);
+                        yi = double.Parse(arrCuadruplos[2]);
+                        zi = double.Parse(arrCuadruplos[3]);
+
+                        sumWi += wi;
+                        sumWiXi += (wi * xi);
+                        sumWiYi += (wi * yi);
+                        sumWiZi += (wi * zi);
+                        sumWi2 += (wi * wi);
+
+                        sumXi += xi;    //&m
+                        sumXiYi += (xi * yi);   //&m
+                        sumXiZi += (xi * zi);
+                        sumXi2 += (xi * xi);  //&m
+
+                        sumYi += yi;    //&m
+                        sumYiZi += (yi * zi);
+                        sumYi2 += (yi * yi);  //&m
+
+                        sumZi += zi;
+                        archivo.Cuadruplos++;   //&m
+                        sLinea = entrada.ReadLine();
+                    }
+                    //&d=5
+                    double[,] temp = new double[,] {    { archivo.Cuadruplos, sumWi, sumXi, sumYi, sumZi },
+                                                        { sumWi, sumWi2, sumWiXi, sumWiYi, sumWiZi},
+                                                        { sumXi, sumWiXi, sumXi2, sumXiYi, sumXiZi},
+                                                        { sumYi, sumWiYi, sumXiYi, sumYi2, sumYiZi}     };
+                    double[] x = Gauss(temp);
+                    archivo.B0 = x[0];  //&m
+                    archivo.B1 = x[1];  //&m
+                    archivo.B2 = x[2];
+                    archivo.B3 = x[3];
+                    archivo.ZK = archivo.B0 + (archivo.B1 * archivo.Wk) + (archivo.B2 * archivo.Xk) + (archivo.B3 * archivo.Yk);
+                    archivo.toString();
+                    
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calcula los parametros de regresión multiple
+        /// </summary>
+        /// <param name="A">arrego de valores tipo doble</param>
+        /// <returns>arreglo de valores tipo doble</returns>
+        //&i
+        public double[] Gauss(double[,] A)
+        {
+            int n = A.GetLength(0);
+            double c;
+            double[] x = new double[n];
+
+            for (int j = 0; j < n; j++)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    if (i != j)
+                    {
+                        c = A[i,j] / A[j,j];
+                        for (int k = 0; k < n + 1; k++)
+                        {
+                            A[i,k] = A[i,k] - c * A[j,k];
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < n; i++)
+            {
+                x[i] = A[i,n] / A[i,i];
+                /*if ((A[i,i] != A[i,i]) || (A[i,i] == 0))
+                    break;*/
+            }
+            return x;
+        }
+
+
+        //&d=19
+    }
+}
+//&p-Archivo
+//&b=46
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Programa7
+{
+    class Archivo
+    {
+        private double cuadruplos = 0;//&m
+        private double wk;
+        private double xk;
+        private double yk; 
+        //&d=2
+        private double b0;
+        private double b1;
+        private double b2;
+        private double b3;
+        private double zk;
+
+        //&i
+        public Archivo()
+        {
+            cuadruplos = 0;
+            wk = 0;
+            xk = 0;
+            yk = 0;
+            //&d=2
+            b0 = 0;
+            b1 = 0;
+            b2 = 0;
+            b3 = 0;
+            zk = 0;
+        }
+
+        //&i
+        public double Cuadruplos    //&m
+        {
+            set { cuadruplos = value; } //&m
+            get { return cuadruplos; }  //&m
+        }
+
+        //&i
+        public double Wk
+        {
+            set { wk = value; }
+            get { return wk; }
+        }
+
+        //&i
+        public double Xk
+        {
+            set { xk = value; }
+            get { return xk; }
+        }
+
+        //&i
+        public double Yk
+        {
+            set { yk = value; }
+            get { return yk; }
+        }
+
+        //&d=6
+
+        //&i
+        public double B0
+        {
+            set { b0 = value; }
+            get { return b0; }
+        }
+
+        //&i
+        public double B1
+        {
+            set { b1 = value; }
+            get { return b1; }
+        }
+
+        //&i
+        public double B2
+        {
+            set { b2 = value; }
+            get { return b2; }
+        }
+
+        //&i
+        public double B3
+        {
+            set { b3 = value; }
+            get { return b3; }
+        }
+
+        public double ZK
+        {
+            set { zk = value; }
+            get { return zk; }
+        }
+        
+        //&i
+        public void toString()
+        {
+            Console.WriteLine("N = " + cuadruplos + "\nwk = " + wk.ToString("N5") + "\nxk = " + xk.ToString("N5") + "\nyk = " + yk.ToString("N5") + "\n------------\nb0 = " + b0.ToString("N5") + //&m
+                "\nb1 = " + b1.ToString("N5") + "\nb2 = " + b2.ToString("N5") + "\nb3 = " + b3.ToString("N5") + "\n------------\nzk = " + zk.ToString("N5")); //&m
+        }
+    }
+}
+//&p-Programa
+//&b=13
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Programa7
+{
+    class Program
+    {
+        //&i
+        static void Main(string[] args)
+        {
+            string archivo;
+            archivo = Console.ReadLine();
+            Controlador controlador = new Controlador();
+            controlador.ProcesarArchivo(archivo);
+            Console.ReadLine();
+        }
+    }
+}
